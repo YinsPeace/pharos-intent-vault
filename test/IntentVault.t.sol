@@ -19,6 +19,17 @@ contract IntentVaultTest is Test {
         return IntentVault.Condition(IntentVault.ConditionType.TIME, address(0), ts);
     }
 
+    function test_canExecute_time() public {
+        uint256 fireAt = block.timestamp + 1 days;
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 1 ether}(
+            bob, "", _timeCond(fireAt), uint64(block.timestamp + 2 days)
+        );
+        assertFalse(vault.canExecute(id));      // before fireAt
+        vm.warp(fireAt);
+        assertTrue(vault.canExecute(id));       // at/after fireAt
+    }
+
     function test_scheduleIntent_storesAndEscrows() public {
         vm.prank(alice);
         uint256 id = vault.scheduleIntent{value: 1 ether}(

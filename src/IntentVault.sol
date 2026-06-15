@@ -63,4 +63,22 @@ contract IntentVault {
         if (id >= intentCount) revert IntentNotFound();
         return _intents[id];
     }
+
+    function _conditionMet(Condition memory c) internal view returns (bool) {
+        if (c.cType == ConditionType.TIME) {
+            return block.timestamp >= c.threshold;
+        } else if (c.cType == ConditionType.BALANCE_BELOW) {
+            return c.subject.balance <= c.threshold;
+        } else {
+            return c.subject.balance >= c.threshold; // BALANCE_ABOVE
+        }
+    }
+
+    function canExecute(uint256 id) public view returns (bool) {
+        if (id >= intentCount) revert IntentNotFound();
+        Intent storage it = _intents[id];
+        if (it.status != Status.Active) return false;
+        if (block.timestamp > it.expiry) return false;
+        return _conditionMet(it.condition);
+    }
 }
