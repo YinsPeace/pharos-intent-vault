@@ -6,6 +6,8 @@ import {IntentVault} from "../src/IntentVault.sol";
 import {Reverter} from "./mocks/Reverter.sol";
 import {Receiver} from "./mocks/Receiver.sol";
 import {Reentrancer} from "./mocks/Reentrancer.sol";
+import {MockOracle} from "./mocks/MockOracle.sol";
+import {IConditionOracle} from "../src/IConditionOracle.sol";
 
 contract IntentVaultTest is Test {
     IntentVault vault;
@@ -217,5 +219,12 @@ contract IntentVaultTest is Test {
         assertEq(alice.balance, aliceBefore + 2 ether);
         assertEq(vault.totalEscrowed(), 0);
         assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Reclaimed));
+    }
+
+    function test_oracleInterface_compilesAndToggles() public {
+        MockOracle o = new MockOracle();
+        assertFalse(IConditionOracle(address(o)).isMet(""));
+        o.set(true);
+        assertTrue(IConditionOracle(address(o)).isMet(""));
     }
 }
