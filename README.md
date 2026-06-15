@@ -27,6 +27,25 @@ itself; an external caller is always required.
 - **Network:** Pharos Atlantic testnet (chain ID 688689)
 - **Contract:** `0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217`
 - **Explorer:** https://atlantic.pharosscan.xyz/address/0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
+- **Source verification:** verified on the explorer (Pass - Verified)
+
+### Live demo (on-chain proof)
+
+A real schedule -> execute round-trip on Atlantic testnet (intent #0): the agent escrowed 0.001 PHRS
+under a TIME condition, then a keeper settled it once the condition held.
+
+| Step | Transaction |
+|---|---|
+| `scheduleIntent` (escrow 0.001 PHRS, TIME condition) | [0x142e…0057](https://atlantic.pharosscan.xyz/tx/0x142e439b268705d0b46d8263876ad6b83a1e4c815f80e0fd55680c2dbb480057) |
+| `execute` (condition met, escrow settled to target) | [0x1c2b…35df](https://atlantic.pharosscan.xyz/tx/0x1c2b5ee5c987be226b0a329e20b59567fe4289c9ab3da2ed92b4fec6a4b435df) |
+
+Reproduce with:
+
+```bash
+forge script script/Demo.s.sol:Demo --rpc-url https://atlantic.dplabs-internal.com --broadcast
+```
+
+(requires a funded deployer key in `.env`).
 
 ## Quickstart
 
