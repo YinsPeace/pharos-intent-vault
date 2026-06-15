@@ -1,3 +1,5 @@
+![Pharos Intent Vault](docs/cover.png)
+
 # Pharos IntentVault
 
 A reusable, condition-gated on-chain execution primitive for AI agents on Pharos Atlantic.
