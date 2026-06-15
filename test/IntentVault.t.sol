@@ -30,6 +30,25 @@ contract IntentVaultTest is Test {
         assertTrue(vault.canExecute(id));       // at/after fireAt
     }
 
+    function test_execute_time_paysTargetOnce() public {
+        uint256 fireAt = block.timestamp + 1 days;
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 3 ether}(
+            bob, "", _timeCond(fireAt), uint64(block.timestamp + 2 days)
+        );
+        vm.warp(fireAt);
+
+        uint256 bobBefore = bob.balance;
+        vault.execute(id); // permissionless; called by test (any executor)
+        assertEq(bob.balance, bobBefore + 3 ether);
+        assertEq(vault.totalEscrowed(), 0);
+        assertEq(address(vault).balance, 0);
+        assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Executed));
+
+        vm.expectRevert(IntentVault.NotActive.selector);
+        vault.execute(id); // cannot run twice
+    }
+
     function test_scheduleIntent_storesAndEscrows() public {
         vm.prank(alice);
         uint256 id = vault.scheduleIntent{value: 1 ether}(

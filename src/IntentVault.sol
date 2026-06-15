@@ -29,11 +29,25 @@ contract IntentVault {
     mapping(uint256 => Intent) private _intents;
 
     event IntentScheduled(uint256 indexed id, address indexed owner, address indexed target, uint256 value, uint64 expiry);
+    event IntentExecuted(uint256 indexed id, address indexed executor);
 
     error ZeroTarget();
     error SelfCallForbidden();
     error BadExpiry();
     error IntentNotFound();
+    error NotActive();
+    error Expired();
+    error ConditionNotMet();
+    error CallFailed();
+    error Reentrancy();
+
+    bool private _locked;
+    modifier nonReentrant() {
+        if (_locked) revert Reentrancy();
+        _locked = true;
+        _;
+        _locked = false;
+    }
 
     function scheduleIntent(
         address target,
@@ -80,5 +94,26 @@ contract IntentVault {
         if (it.status != Status.Active) return false;
         if (block.timestamp > it.expiry) return false;
         return _conditionMet(it.condition);
+    }
+
+    function execute(uint256 id) external nonReentrant {
+        if (id >= intentCount) revert IntentNotFound();
+        Intent storage it = _intents[id];
+        if (it.status != Status.Active) revert NotActive();
+        if (block.timestamp > it.expiry) revert Expired();
+        if (!_conditionMet(it.condition)) revert ConditionNotMet();
+
+        // effects
+        it.status = Status.Executed;
+        uint256 val = it.value;
+        totalEscrowed -= val;
+        address target = it.target;
+        bytes memory data = it.data;
+
+        // interaction
+        (bool ok, ) = target.call{value: val}(data);
+        if (!ok) revert CallFailed();
+
+        emit IntentExecuted(id, msg.sender);
     }
 }
