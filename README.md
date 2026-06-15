@@ -53,7 +53,7 @@ forge script script/Demo.s.sol:Demo --rpc-url https://atlantic.dplabs-internal.c
 
 ```bash
 forge test -v
-# 17 tests pass; includes fuzzed solvency invariant
+# 18 tests pass; includes fuzzed solvency invariant
 ```
 
 ### Run Demo (requires funded wallet)
@@ -120,7 +120,7 @@ Reproducible local pre-audit:
   (intrinsic to time conditions), one inline-assembly block (the returndata-bomb mitigation in
   `execute`), and two low-level calls (native-PHRS refunds in `cancel`/`reclaim`). All intentional.
 - **18 Foundry tests** including a fuzzed solvency invariant (256 runs, depth 32).
-- **Four independent adversarial audits** — no exploitable findings.
+- **Four adversarial review passes** (one in-house audit plus three independent LLM red-teams) — no exploitable findings.
 
 ## Conditions
 
@@ -170,7 +170,7 @@ src/
   IntentVault.sol              Core contract
   IConditionOracle.sol         Phase-2 oracle extension interface
 test/
-  IntentVault.t.sol            Unit tests (17 cases)
+  IntentVault.t.sol            Unit tests
   IntentVault.invariant.t.sol  Fuzzed solvency invariant
 script/                        Deployment scripts
 assets/
