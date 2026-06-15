@@ -30,7 +30,7 @@ Set your private key before any write operation:
 
 ```bash
 export PRIVATE_KEY=0x<your-key>
-export VAULT=__VAULT_ADDRESS__
+export VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 ```
 
 `PRIVATE_KEY` must never be committed to source control or logged. Store it in a secrets manager or shell session variable only.

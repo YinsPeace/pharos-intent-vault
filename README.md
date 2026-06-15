@@ -25,8 +25,8 @@ itself; an external caller is always required.
 ## Deployed Contract
 
 - **Network:** Pharos Atlantic testnet (chain ID 688689)
-- **Contract:** `__VAULT_ADDRESS__`
-- **Explorer:** https://atlantic.pharosscan.xyz/address/__VAULT_ADDRESS__
+- **Contract:** `0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217`
+- **Explorer:** https://atlantic.pharosscan.xyz/address/0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 
 ## Quickstart
 
@@ -40,7 +40,7 @@ forge test -v
 ### Run Demo (requires funded wallet)
 
 ```bash
-export VAULT=__VAULT_ADDRESS__
+export VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 export PK=0x<your-private-key>
 export TARGET=<recipient-address>
 bash demo/run_demo.sh

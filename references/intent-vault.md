@@ -1,7 +1,7 @@
 # IntentVault Reference
 
 > **Network Configuration:** All commands use Atlantic testnet RPC `https://atlantic.dplabs-internal.com`
-> (chain ID 688689). Set `RPC=https://atlantic.dplabs-internal.com` and `VAULT=__VAULT_ADDRESS__`
+> (chain ID 688689). Set `RPC=https://atlantic.dplabs-internal.com` and `VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217`
 > in your shell before running any command below.
 >
 > **Private Key Configuration:** Set `export PRIVATE_KEY=0x<your-key>` for write operations.
@@ -18,7 +18,7 @@ An executor (agent, keeper, or any EOA) calls `execute` once the time threshold 
 
 ```bash
 RPC=https://atlantic.dplabs-internal.com
-VAULT=__VAULT_ADDRESS__
+VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 
 # Inputs
 TARGET=<recipient-or-contract-address>
@@ -90,7 +90,7 @@ or escrow release tied to on-chain balance state.
 
 ```bash
 RPC=https://atlantic.dplabs-internal.com
-VAULT=__VAULT_ADDRESS__
+VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 
 # Inputs
 TARGET=<recipient-or-contract>
@@ -168,7 +168,7 @@ keeper poll gate before attempting `execute`.
 
 ```bash
 RPC=https://atlantic.dplabs-internal.com
-VAULT=__VAULT_ADDRESS__
+VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 ID=<intent-id>
 
 cast call "$VAULT" "canExecute(uint256)(bool)" "$ID" --rpc-url "$RPC"
@@ -219,7 +219,7 @@ as Executed.
 
 ```bash
 RPC=https://atlantic.dplabs-internal.com
-VAULT=__VAULT_ADDRESS__
+VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 ID=<intent-id>
 
 cast send "$VAULT" "execute(uint256)" "$ID" \
@@ -275,7 +275,7 @@ Two owner-only paths for recovering escrowed PHRS when an intent should not sett
 
 ```bash
 RPC=https://atlantic.dplabs-internal.com
-VAULT=__VAULT_ADDRESS__
+VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 ID=<intent-id>
 
 # Cancel an Active intent (anytime while Active, owner only)
@@ -328,7 +328,7 @@ Inspect the full on-chain state of any intent by ID. No wallet required.
 
 ```bash
 RPC=https://atlantic.dplabs-internal.com
-VAULT=__VAULT_ADDRESS__
+VAULT=0x10f1d2a0B6A60ec8A872fbe46a909021EDd7a217
 ID=<intent-id>
 
 # Read full intent struct
