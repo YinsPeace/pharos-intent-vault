@@ -114,6 +114,8 @@ Reproducible local pre-audit:
 - **Pattern scan** of all authored files: no shell-exec, `eval`, `fetch`/`axios`, websocket, or
   exfiltration patterns. Every key reference is the standard, explicitly-cautioned `cast --private-key`
   signing usage; no hardcoded keys.
+- **Secret scan** (full git history + working tree): `.env` was never committed in any commit; no
+  private keys, seeds, or credentials anywhere in history or tracked files.
 - **Slither 0.11.5**: 0 high, 0 medium. Only informational notes — `block.timestamp` comparisons
   (intrinsic to time conditions), one inline-assembly block (the returndata-bomb mitigation in
   `execute`), and two low-level calls (native-PHRS refunds in `cancel`/`reclaim`). All intentional.
