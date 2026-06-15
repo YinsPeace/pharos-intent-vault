@@ -8,6 +8,7 @@ import {Receiver} from "./mocks/Receiver.sol";
 import {Reentrancer} from "./mocks/Reentrancer.sol";
 import {MockOracle} from "./mocks/MockOracle.sol";
 import {IConditionOracle} from "../src/IConditionOracle.sol";
+import {ReturnBomber} from "./mocks/ReturnBomber.sol";
 
 contract IntentVaultTest is Test {
     IntentVault vault;
@@ -219,6 +220,19 @@ contract IntentVaultTest is Test {
         assertEq(alice.balance, aliceBefore + 2 ether);
         assertEq(vault.totalEscrowed(), 0);
         assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Reclaimed));
+    }
+
+    function test_execute_ignoresReturndataBomb() public {
+        ReturnBomber rb = new ReturnBomber();
+        uint256 fireAt = block.timestamp + 1;
+        vm.prank(alice);
+        // non-empty data hits the fallback (which returns a 100KB blob)
+        uint256 id = vault.scheduleIntent{value: 1 ether}(address(rb), hex"12", _timeCond(fireAt), uint64(fireAt + 1000));
+        vm.warp(fireAt);
+        vault.execute(id); // must still succeed and settle, ignoring the returndata
+        assertEq(address(rb).balance, 1 ether);
+        assertTrue(rb.hit());
+        assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Executed));
     }
 
     function test_oracleInterface_compilesAndToggles() public {

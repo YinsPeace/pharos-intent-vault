@@ -114,8 +114,11 @@ contract IntentVault {
         address target = it.target;
         bytes memory data = it.data;
 
-        // interaction
-        (bool ok, ) = target.call{value: val}(data);
+        // interaction — assembly call skips returndata copy, preventing returndata-bomb gas griefing of executors
+        bool ok;
+        assembly {
+            ok := call(gas(), target, val, add(data, 0x20), mload(data), 0, 0)
+        }
         if (!ok) revert CallFailed();
 
         emit IntentExecuted(id, msg.sender);
