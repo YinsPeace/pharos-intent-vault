@@ -72,7 +72,9 @@ settles the intent.
 
 - **Isolated escrow accounting.** Each intent's PHRS is tracked in `totalEscrowed`. The contract
   enforces `balance >= totalEscrowed` as a fuzzed solvency invariant (256 runs, depth 32). Escrow
-  from one intent is never accessible to another.
+  from one intent is never accessible to another. Forced ether (e.g. via `selfdestruct`) can only
+  push `balance` above `totalEscrowed`, never below — it cannot make the vault insolvent or affect
+  any intent's escrow (`test_forcedEth_keepsSolvencyAndIsolation`).
 
 - **One-shot settlement.** Once an intent is Executed, Cancelled, or Reclaimed, its status is
   permanently terminal. No double-spend path exists.

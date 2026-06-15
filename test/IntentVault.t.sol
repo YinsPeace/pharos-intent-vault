@@ -9,6 +9,7 @@ import {Reentrancer} from "./mocks/Reentrancer.sol";
 import {MockOracle} from "./mocks/MockOracle.sol";
 import {IConditionOracle} from "../src/IConditionOracle.sol";
 import {ReturnBomber} from "./mocks/ReturnBomber.sol";
+import {Selfdestructor} from "./mocks/Selfdestructor.sol";
 
 contract IntentVaultTest is Test {
     IntentVault vault;
@@ -240,5 +241,44 @@ contract IntentVaultTest is Test {
         assertFalse(IConditionOracle(address(o)).isMet(""));
         o.set(true);
         assertTrue(IConditionOracle(address(o)).isMet(""));
+    }
+
+    // --- Forced-ETH solvency: a reviewer flagged selfdestruct force-feeding as a "critical"
+    //     solvency break. This proves it is not: the claimed invariant is balance >= totalEscrowed,
+    //     and forced ether only pushes balance ABOVE obligations. No intent's escrow is affected,
+    //     no surplus leaks into a payout, and every function keeps working.
+    function test_forcedEth_keepsSolvencyAndIsolation() public {
+        uint256 fireAt = block.timestamp + 1;
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 1 ether}(bob, "", _timeCond(fireAt), uint64(fireAt + 1000));
+        assertEq(vault.totalEscrowed(), 1 ether);
+        assertEq(address(vault).balance, 1 ether);
+
+        // force-feed 5 ether via selfdestruct (bypasses the absence of receive())
+        Selfdestructor sd = new Selfdestructor{value: 5 ether}();
+        sd.boom(payable(address(vault)));
+
+        // claimed invariant STILL holds: forced ether only adds to balance
+        assertEq(address(vault).balance, 6 ether);
+        assertEq(vault.totalEscrowed(), 1 ether);
+        assertGe(address(vault).balance, vault.totalEscrowed());
+
+        // the intent settles for EXACTLY its own escrow, never the surplus
+        vm.warp(fireAt);
+        uint256 bobBefore = bob.balance;
+        vault.execute(id);
+        assertEq(bob.balance, bobBefore + 1 ether); // paid 1, not 6
+        assertEq(vault.totalEscrowed(), 0);
+        assertEq(address(vault).balance, 5 ether);  // surplus harmlessly stuck, owned by no intent
+        assertGe(address(vault).balance, vault.totalEscrowed());
+
+        // every function still works normally despite the surplus
+        vm.prank(alice);
+        uint256 id2 = vault.scheduleIntent{value: 2 ether}(bob, "", _timeCond(block.timestamp + 1), uint64(block.timestamp + 1000));
+        assertEq(vault.totalEscrowed(), 2 ether);
+        assertGe(address(vault).balance, vault.totalEscrowed()); // 7 >= 2
+        vm.prank(alice);
+        vault.cancel(id2);
+        assertEq(vault.totalEscrowed(), 0);
     }
 }
