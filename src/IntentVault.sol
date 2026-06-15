@@ -31,6 +31,7 @@ contract IntentVault {
     event IntentScheduled(uint256 indexed id, address indexed owner, address indexed target, uint256 value, uint64 expiry);
     event IntentExecuted(uint256 indexed id, address indexed executor);
     event IntentCancelled(uint256 indexed id);
+    event IntentReclaimed(uint256 indexed id);
 
     error ZeroTarget();
     error SelfCallForbidden();
@@ -42,6 +43,7 @@ contract IntentVault {
     error CallFailed();
     error Reentrancy();
     error NotOwner();
+    error NotExpired();
 
     bool private _locked;
     modifier nonReentrant() {
@@ -129,6 +131,22 @@ contract IntentVault {
         uint256 val = it.value;
         totalEscrowed -= val;
         emit IntentCancelled(id);
+
+        (bool ok, ) = msg.sender.call{value: val}("");
+        if (!ok) revert CallFailed();
+    }
+
+    function reclaim(uint256 id) external nonReentrant {
+        if (id >= intentCount) revert IntentNotFound();
+        Intent storage it = _intents[id];
+        if (it.owner != msg.sender) revert NotOwner();
+        if (it.status != Status.Active) revert NotActive();
+        if (block.timestamp <= it.expiry) revert NotExpired();
+
+        it.status = Status.Reclaimed;
+        uint256 val = it.value;
+        totalEscrowed -= val;
+        emit IntentReclaimed(id);
 
         (bool ok, ) = msg.sender.call{value: val}("");
         if (!ok) revert CallFailed();

@@ -159,4 +159,24 @@ contract IntentVaultTest is Test {
         vm.expectRevert(IntentVault.NotOwner.selector);
         vault.cancel(id);
     }
+
+    // --- Task 8: reclaim ---
+
+    function test_reclaim_afterExpiry() public {
+        uint64 exp = uint64(block.timestamp + 1 days);
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 2 ether}(bob, "", _timeCond(block.timestamp + 12 hours), exp);
+
+        vm.prank(alice);
+        vm.expectRevert(IntentVault.NotExpired.selector);
+        vault.reclaim(id); // too early
+
+        vm.warp(exp + 1);
+        uint256 aliceBefore = alice.balance;
+        vm.prank(alice);
+        vault.reclaim(id);
+        assertEq(alice.balance, aliceBefore + 2 ether);
+        assertEq(vault.totalEscrowed(), 0);
+        assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Reclaimed));
+    }
 }
