@@ -30,6 +30,7 @@ contract IntentVault {
 
     event IntentScheduled(uint256 indexed id, address indexed owner, address indexed target, uint256 value, uint64 expiry);
     event IntentExecuted(uint256 indexed id, address indexed executor);
+    event IntentCancelled(uint256 indexed id);
 
     error ZeroTarget();
     error SelfCallForbidden();
@@ -40,6 +41,7 @@ contract IntentVault {
     error ConditionNotMet();
     error CallFailed();
     error Reentrancy();
+    error NotOwner();
 
     bool private _locked;
     modifier nonReentrant() {
@@ -115,5 +117,20 @@ contract IntentVault {
         if (!ok) revert CallFailed();
 
         emit IntentExecuted(id, msg.sender);
+    }
+
+    function cancel(uint256 id) external nonReentrant {
+        if (id >= intentCount) revert IntentNotFound();
+        Intent storage it = _intents[id];
+        if (it.owner != msg.sender) revert NotOwner();
+        if (it.status != Status.Active) revert NotActive();
+
+        it.status = Status.Cancelled;
+        uint256 val = it.value;
+        totalEscrowed -= val;
+        emit IntentCancelled(id);
+
+        (bool ok, ) = msg.sender.call{value: val}("");
+        if (!ok) revert CallFailed();
     }
 }

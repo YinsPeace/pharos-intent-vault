@@ -134,4 +134,29 @@ contract IntentVaultTest is Test {
         vault.scheduleIntent{value: 1 ether}(bob, "", _timeCond(block.timestamp+1), uint64(block.timestamp));
         vm.stopPrank();
     }
+
+    // --- Task 7: cancel ---
+
+    function test_cancel_refundsOwner() public {
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 2 ether}(
+            bob, "", _timeCond(block.timestamp + 1 days), uint64(block.timestamp + 2 days)
+        );
+        uint256 aliceBefore = alice.balance;
+        vm.prank(alice);
+        vault.cancel(id);
+        assertEq(alice.balance, aliceBefore + 2 ether);
+        assertEq(vault.totalEscrowed(), 0);
+        assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Cancelled));
+    }
+
+    function test_cancel_onlyOwner() public {
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 1 ether}(
+            bob, "", _timeCond(block.timestamp + 1 days), uint64(block.timestamp + 2 days)
+        );
+        vm.prank(bob);
+        vm.expectRevert(IntentVault.NotOwner.selector);
+        vault.cancel(id);
+    }
 }
