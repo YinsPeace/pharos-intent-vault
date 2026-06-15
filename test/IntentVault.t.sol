@@ -3,6 +3,9 @@ pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {IntentVault} from "../src/IntentVault.sol";
+import {Reverter} from "./mocks/Reverter.sol";
+import {Receiver} from "./mocks/Receiver.sol";
+import {Reentrancer} from "./mocks/Reentrancer.sol";
 
 contract IntentVaultTest is Test {
     IntentVault vault;
@@ -161,6 +164,42 @@ contract IntentVaultTest is Test {
     }
 
     // --- Task 8: reclaim ---
+
+    // --- Task 9: reentrancy + CallFailed + isolation ---
+
+    function test_execute_revertsOnTargetFailure_keepsEscrow() public {
+        Reverter r = new Reverter();
+        uint256 fireAt = block.timestamp + 1;
+        vm.prank(alice);
+        uint256 id = vault.scheduleIntent{value: 1 ether}(address(r), "", _timeCond(fireAt), uint64(fireAt + 1000));
+        vm.warp(fireAt);
+        vm.expectRevert(IntentVault.CallFailed.selector);
+        vault.execute(id);
+        // state unchanged: still Active, escrow intact, owner can reclaim later
+        assertEq(uint8(vault.getIntent(id).status), uint8(IntentVault.Status.Active));
+        assertEq(vault.totalEscrowed(), 1 ether);
+        assertEq(address(vault).balance, 1 ether);
+    }
+
+    function test_reentrancy_blocked_isolatesEscrow() public {
+        Reentrancer atk = new Reentrancer(vault);
+        Receiver good = new Receiver();
+        uint256 fireAt = block.timestamp + 1;
+        // intent A pays the attacker; intent B pays a good receiver
+        vm.prank(alice);
+        uint256 idA = vault.scheduleIntent{value: 1 ether}(address(atk), "", _timeCond(fireAt), uint64(fireAt + 1000));
+        vm.prank(alice);
+        uint256 idB = vault.scheduleIntent{value: 5 ether}(address(good), "", _timeCond(fireAt), uint64(fireAt + 1000));
+        atk.arm(idB);
+        vm.warp(fireAt);
+
+        vault.execute(idA); // attacker re-enters execute(idB) inside receive; guard makes it a no-op
+        // idA settled and paid its own 1 ether; idB untouched, escrow isolated
+        assertEq(uint8(vault.getIntent(idA).status), uint8(IntentVault.Status.Executed));
+        assertEq(uint8(vault.getIntent(idB).status), uint8(IntentVault.Status.Active));
+        assertEq(vault.totalEscrowed(), 5 ether);
+        assertEq(address(vault).balance, 5 ether);
+    }
 
     function test_reclaim_afterExpiry() public {
         uint64 exp = uint64(block.timestamp + 1 days);
